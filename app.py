@@ -33,11 +33,13 @@ twilio_client = TwilioClient(Configuration.TWILIO_ACCOUNT_SID, Configuration.TWI
 @app.route('/', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        to_email = request.form['email']
-        session['to_email'] = to_email
+        form = request.get_json()
+        to_email = form['email']
         send_verification(to_email)
-        return redirect(url_for('generate_verification_code'))
-    return render_template('index.html')
+        # return redirect(url_for('generate_verification_code')) # Use redirect by providing the redirect url in the request json.
+        return {'status': 200, 'msg': f'verifcation code sent to {to_email}', 'body': {}}
+    # return render_template('index.html')
+    return {'status': 500, 'msg': f'cannot access `login` using GET method', 'body': {}}
 
 
     
@@ -53,16 +55,23 @@ def send_verification(to_email):
 
 @app.route('/verifyme', methods=['GET', 'POST'])
 def generate_verification_code():
-    to_email = session['to_email']
+    form = request.get_json()
+    to_email = form['email']
+    # to_email = session['to_email']
+
     error = None
     if request.method == 'POST':
-        verification_code = request.form['verificationcode']
+        verification_code = form['verificationcode']
+        # verification_code = request.form['verificationcode']
         if check_verification_token(to_email, verification_code):
-            return render_template('success.html', email = to_email)
+            # return render_template('success.html', email = to_email)
+            return {'status': 200, 'msg': f'successful validation', 'body': {}}
         else:
             error = "Invalid verification code. Please try again."
-            return render_template('verifypage.html', error = error)
-    return render_template('verifypage.html', email = to_email)
+            return {'status': 401, 'msg': error, 'body': {}}
+            # return render_template('verifypage.html', error = error)
+    # return render_template('verifypage.html', email = to_email)
+    return {'status': 500, 'msg': f'cannot access `verifyme` using GET method', 'body': {}}
 
 
 def check_verification_token(phone, token):
@@ -74,4 +83,3 @@ def check_verification_token(phone, token):
 
 
 
-    
